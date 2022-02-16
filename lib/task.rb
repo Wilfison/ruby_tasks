@@ -1,7 +1,10 @@
 # frozen_string_literal: true
 
+require 'pry'
 require 'date'
-require './lib/notify-send'
+require 'open3'
+
+require './lib/notify_send'
 
 # instance of task
 class Task
@@ -20,8 +23,9 @@ class Task
   end
 
   def run
+    write_log('')
+
     execute
-    notify
   end
 
   private
@@ -30,21 +34,34 @@ class Task
     NotifySend.send summary: "Task #{name} complete!", icon: 'info'
   end
 
+  def notify_error
+    NotifySend.send summary: "Task #{name} error!", icon: 'error'
+  end
+
   def log_file
     @log_file || "#{Dir.pwd}/logs/#{slug.strip}.log"
   end
 
   def write_log(data, append: false)
-    append ? File.write(log_file, data, mode: 'a') : File.write(log_file, data)
+    return File.write(log_file, data, mode: 'a') if append && File.exist?(log_file)
+
+    File.open(log_file, 'w') { |f| f.write(data) }
   end
 
   def execute
     commands.each do |cmd|
-      write_log ">>>> Running: #{cmd}\n\r"
+      header_log = ">>>> Running: #{cmd}\n\r"
 
-      log_data = `#{cmd}`
+      stdout, _stderr, status = Open3.capture3(cmd)
 
-      write_log(log_data)
+      write_log("#{header_log}#{stdout}\n\r#{status}")
+    rescue StandardError => e
+      write_log("#{header_log}\n\r#{e}", append: true)
+
+      notify_error
+      raise
     end
+
+    notify
   end
 end
