@@ -1,0 +1,17 @@
+{
+  "before_run": [
+    "echo 'running before tasks'"
+  ],
+  "tasks": [
+    {
+      "name": "Say Hello",
+      "slug": "sey_hello",
+      "date": "2021-12-20",
+      "hour": "09:54",
+      "commands": [
+        "echo 'hello world!'",
+        "echo 'hi, i am ruby script!'"
+      ]
+    }
+  ]
+}
